@@ -1,0 +1,10 @@
+{
+  "name": "google-spark-work",
+  "version": "1.0.0",
+  "description": "Google sparkの作成した成果物を格納します",
+  "scripts": {
+    "lint": "echo \"lint ok\"",
+    "build": "echo \"build ok\"",
+    "test": "echo \"test ok\""
+  }
+}
