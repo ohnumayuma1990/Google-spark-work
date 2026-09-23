@@ -1,0 +1,72 @@
+name: Bulk Create Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      issues_text:
+        description: 'gh issue create コマンド形式のテキスト'
+        required: true
+        type: string
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  create-issues:
+    name: Create Issues in Bulk
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Parse and Create Issues
+        env:
+          INPUT_TEXT: ${{ inputs.issues_text }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 -c '
+          import os
+          import re
+          import shlex
+          import subprocess
+          import sys
+
+          text = os.environ.get("INPUT_TEXT", "").strip()
+          if not text:
+              print("Error: INPUT_TEXT is empty.")
+              sys.exit(1)
+
+          # Find all gh issue create command occurrences
+          matches = list(re.finditer(r"gh\s+issue\s+create\s+([^\n]+(?:\n(?!gh\s+issue\s+create)[^\n]+)*)", text, re.MULTILINE))
+
+          if matches:
+              commands = [m.group(0).strip() for m in matches]
+          else:
+              # Fallback: split by lines
+              commands = [line.strip() for line in text.splitlines() if line.strip()]
+
+          for cmd in commands:
+              if not cmd:
+                  continue
+              if not cmd.startswith("gh issue create"):
+                  cmd = "gh issue create " + cmd
+
+              try:
+                  args = shlex.split(cmd)
+              except Exception as e:
+                  print(f"Error parsing command \"{cmd}\": {e}")
+                  sys.exit(1)
+
+              print(f"Running command: {args}")
+              res = subprocess.run(args, env=os.environ)
+              if res.returncode != 0:
+                  print(f"Command failed with exit code {res.returncode}")
+                  sys.exit(res.returncode)
+          '
