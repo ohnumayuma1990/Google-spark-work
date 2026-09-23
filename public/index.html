@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>リアルタイム質問・リアクションボード</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Custom Styles for floating emoji and UI effects -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-28 font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Floating Container for Reactions -->
+  <div id="emoji-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+  <!-- Header -->
+  <header class="sticky top-0 z-40 glass-panel border-b border-slate-200/80 shadow-sm">
+    <div class="max-w-3xl mx-auto px-4 py-3.5 flex flex-wrap items-center justify-between gap-3">
+      <!-- Room Title & ID Selector -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-indigo-600 text-white p-2 rounded-xl shadow-sm">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 id="room-display-name" class="font-bold text-lg text-slate-900 tracking-tight">#LT-2026</h1>
+            <button id="change-room-btn" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium underline">変更</button>
+          </div>
+          <p class="text-xs text-slate-500">リアルタイム Q&A Board</p>
+        </div>
+      </div>
+
+      <!-- Mode Switch & User Status -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-slate-200/70 p-1 rounded-xl flex items-center text-xs font-semibold">
+          <button id="mode-participant-btn" class="px-3 py-1.5 rounded-lg transition-all duration-200 bg-white text-indigo-600 shadow-sm">
+            参加者
+          </button>
+          <button id="mode-presenter-btn" class="px-3 py-1.5 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900">
+            発表者
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+
+    <!-- Question Form (Participant View Only) -->
+    <section id="question-form-section" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200/80 transition-all">
+      <h2 class="text-base font-bold text-slate-900 mb-3 flex items-center gap-2">
+        <span>💬 質問を投稿する</span>
+      </h2>
+      <form id="question-form" class="space-y-3">
+        <div>
+          <textarea
+            id="question-content"
+            rows="3"
+            placeholder="発表者への質問やコメントを入力してください..."
+            required
+            class="w-full px-3.5 py-2.5 text-slate-800 placeholder-slate-400 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm resize-none"
+          ></textarea>
+        </div>
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <input
+            type="text"
+            id="author-name"
+            placeholder="ニックネーム (空欄時は「匿名」)"
+            class="px-3.5 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-slate-800"
+          />
+          <button
+            type="submit"
+            id="submit-question-btn"
+            class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white text-sm font-semibold rounded-xl shadow-sm transition-colors flex items-center justify-center space-x-1.5"
+          >
+            <span>送信する</span>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Questions Section Header & Filters -->
+    <section class="space-y-4">
+      <div class="flex items-center justify-between px-1">
+        <div class="flex items-center space-x-2">
+          <h2 class="font-bold text-slate-900 text-lg">質問一覧</h2>
+          <span id="question-count-badge" class="bg-indigo-100 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-full">0</span>
+        </div>
+
+        <!-- Sort Toggle -->
+        <div class="flex items-center space-x-1 bg-slate-200/60 p-1 rounded-xl text-xs font-medium">
+          <button id="sort-popular-btn" class="px-3 py-1 rounded-lg bg-white text-slate-900 shadow-sm font-semibold transition-all">
+            🔥 人気順
+          </button>
+          <button id="sort-newest-btn" class="px-3 py-1 rounded-lg text-slate-600 hover:text-slate-900 transition-all">
+            🕒 新着順
+          </button>
+        </div>
+      </div>
+
+      <!-- Question List Container -->
+      <div id="questions-list" class="space-y-3">
+        <!-- Questions will be dynamically inserted here -->
+        <div id="empty-state" class="text-center py-12 bg-white rounded-2xl border border-dashed border-slate-300">
+          <p class="text-slate-400 text-sm">まだ質問がありません。最初の質問を投稿してみましょう！</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Fixed Reaction Floating Bar at Bottom -->
+  <div class="fixed bottom-0 inset-x-0 glass-panel border-t border-slate-200/80 p-3 z-40">
+    <div class="max-w-md mx-auto flex items-center justify-around">
+      <button data-reaction="clap" class="reaction-btn group flex flex-col items-center justify-center p-2 rounded-xl hover:bg-indigo-50 active:scale-95 transition-all">
+        <span class="text-2xl group-hover:scale-125 transition-transform">👏</span>
+        <span id="count-clap" class="text-xs font-bold text-slate-600 mt-1">0</span>
+      </button>
+
+      <button data-reaction="idea" class="reaction-btn group flex flex-col items-center justify-center p-2 rounded-xl hover:bg-yellow-50 active:scale-95 transition-all">
+        <span class="text-2xl group-hover:scale-125 transition-transform">💡</span>
+        <span id="count-idea" class="text-xs font-bold text-slate-600 mt-1">0</span>
+      </button>
+
+      <button data-reaction="smile" class="reaction-btn group flex flex-col items-center justify-center p-2 rounded-xl hover:bg-amber-50 active:scale-95 transition-all">
+        <span class="text-2xl group-hover:scale-125 transition-transform">😂</span>
+        <span id="count-smile" class="text-xs font-bold text-slate-600 mt-1">0</span>
+      </button>
+
+      <button data-reaction="question" class="reaction-btn group flex flex-col items-center justify-center p-2 rounded-xl hover:bg-purple-50 active:scale-95 transition-all">
+        <span class="text-2xl group-hover:scale-125 transition-transform">❓</span>
+        <span id="count-question" class="text-xs font-bold text-slate-600 mt-1">0</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- JS Code via type="module" -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>

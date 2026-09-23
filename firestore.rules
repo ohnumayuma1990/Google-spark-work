@@ -1,0 +1,29 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /rooms/{roomId} {
+      // 誰でも読み取り可能
+      allow read: if true;
+      // ルームの作成およびリアクション更新を許可
+      allow create, update: if true;
+
+      match /questions/{questionId} {
+        // 誰でも質問の読み取りが可能
+        allow read: if true;
+
+        // 質問作成時の必須フィールドと最低限の型検証
+        allow create: if request.resource.data.keys().hasAll(['content', 'authorName', 'userId', 'upvotes', 'upvotedBy', 'isAnswered', 'createdAt'])
+                      && request.resource.data.content is string
+                      && request.resource.data.content.size() > 0;
+
+        // Upvote、回答済みトグルの更新を許可
+        allow update: if true;
+
+        // 削除を許可
+        allow delete: if true;
+      }
+    }
+  }
+}
