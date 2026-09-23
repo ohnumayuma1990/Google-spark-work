@@ -28,11 +28,11 @@
 * **動作環境**: `ubuntu-latest`
 * **主要ステップ**:
   1. `actions/checkout@v4`: リポジトリのチェックアウト
-  2. `actions/setup-node@v4`: Node.js 22.x のセットアップ（`cache: 'npm'` 有効化）
-  3. `npm ci`: 依存パッケージのクリーンインストール
-  4. `npm run lint`: 静的解析の実行（スクリプトが定義されていない場合は適宜フォールバックまたは準備）
-  5. `npm run build`: TypeScript 等のコンパイル実行
-  6. `npm test`: 単体テストの実行
+  2. `actions/setup-node@v4`: Node.js 22.x のセットアップ
+  3. `npm ci`: 依存パッケージのクリーンインストール（`package-lock.json` 存在時のみ実行）
+  4. `npm run lint`: 静的解析の実行（`package-lock.json` 存在時のみ実行）
+  5. `npm run build`: TypeScript 等のコンパイル実行（`package-lock.json` 存在時のみ実行）
+  6. `npm test`: 単体テストの実行（`package-lock.json` 存在時のみ実行）
 
 ---
 
@@ -47,7 +47,7 @@
   * `id-token: write`（WIF による OIDC トークン発行に必要）
 * **動作環境**: `ubuntu-latest`
 * **主要ステップ**:
-  1. チェックアウトおよび Node.js 22.x のセットアップ（`npm ci`, `npm test` による品質担保）
+  1. チェックアウトおよび Node.js 22.x のセットアップ（`package-lock.json` 存在時には `npm ci`, `npm test` による品質担保）
   2. `google-github-actions/auth@v2`: WIF による GCP 認証
      * Secrets 参照: `secrets.WORKLOAD_IDENTITY_PROVIDER`, `secrets.SERVICE_ACCOUNT`
   3. `google-github-actions/setup-gcloud@v2`: Cloud SDK のセットアップ
