@@ -11,7 +11,7 @@
 1. **CI Pipeline (`.github/workflows/ci.yml`)**
    コード変更時の静的解析 (lint)、ビルド、単体テストの自動実行を行います。
 2. **Deploy to Cloud Run (`.github/workflows/deploy.yml`)**
-   Workload Identity Federation (WIF) を利用し、Google Cloud Run へアプリケーションを安全に自動デプロイします。
+   Workload Identity Federation (WIF) を利用し、Google Cloud Run へアプリケーションを安全に自動デプロイします。詳細な設定・実行手順は [デプロイ手順書 (DEPLOYMENT_GUIDE.md)](./DEPLOYMENT_GUIDE.md) を参照してください。
 3. **Bulk Create Issues (`.github/workflows/create-issues.yml`)**
    `gh issue create` 形式のテキスト入力をパースし、複数の GitHub Issue を一括作成します。
 
